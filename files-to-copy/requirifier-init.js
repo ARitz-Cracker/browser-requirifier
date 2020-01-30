@@ -41,15 +41,15 @@ const loadJavascript = function(url){
 		loadedJavascripts[url] = new Promise((resolve, reject) => {
 			const element = document.createElement("script");
 			element.async = true;
-			element.onload(() => {
+			element.onload = () => {
 				loadedJavascripts[url] = true;
 				resolve();
-			});
-			element.onerror((e) => {
+			};
+			element.onerror = (e) => {
 				//TODO: e is an EVENT not an error!!
 				//alert(inspect(e));
 				reject(new Error("File could not be loaded: " + url));
-			});
+			};
 			element.src = url;
 			document.getElementsByTagName("head")[0].appendChild(element);
 		});

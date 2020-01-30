@@ -22,7 +22,7 @@ const removeDirectoryContents = async function(dir){
 		try{
 			await fsp.unlink(dir + path.sep + files[i]);
 		}catch(ex){
-			if(ex.code !== "EISDIR"){
+			if(ex.code !== "EISDIR" && ex.code !== "EPERM"){
 				throw ex;
 			}
 			await removeDirectoryContents(dir + path.sep + files[i]);
@@ -47,8 +47,8 @@ const isExcluded = {
 	"node_modules/browser-requirifier": true
 };
 const currentDirectory = path.resolve(".");
-const unixifyPath = function(path){
-	return path.replace(RegExp("\\" + path.sep, "g"), "/");
+const unixifyPath = function(filePath){
+	return filePath.replace(RegExp("\\" + path.sep, "g"), "/");
 }
 const readJSONIfExists = async function(path){
 	try{
@@ -92,11 +92,13 @@ const correctMainFileName = async function(dir, filename){
 }
 
 const includeDirectory = async function(dir, aliasesForIndexFile = []){
+	
 	aliasesForIndexFile.push(dir);
 	const relativePath = dir.substring(currentDirectory.length + 1);
 	await fsp.mkdir(configOptions.outputDir + path.sep + relativePath);
 	const packageOptions = await readJSONIfExists(dir + path.sep + "package.json");
 	if(packageOptions == null){
+		console.log("dir:", dir);
 		const files = await fsp.readdir(dir);
 		removeItemFromArray("index.js");
 		removeItemFromArray("index.json");
@@ -106,6 +108,7 @@ const includeDirectory = async function(dir, aliasesForIndexFile = []){
 			await includeFile(dir + path.sep + files[i]);
 		}
 	}else{
+		console.log("package:", dir);
 		packageOptions.main = await correctMainFileName(dir, packageOptions.main);
 		if(packageOptions.browser){
 			packageOptions.browser = await correctMainFileName(dir, packageOptions.browser);
@@ -136,14 +139,21 @@ const includeDirectory = async function(dir, aliasesForIndexFile = []){
 	}
 	
 }
-const includeFile = async function(path, aliases = []){
+const includeFile = async function(filePath, aliases = []){
 	try{
-		if(isExcluded[path]){
+		if(isExcluded[filePath]){
 			return;
 		}
-		const relativePath = path.substring(currentDirectory.length + 1);
+
+		// Remove this block of code when https://github.com/nodejs/node/issues/31583 is fixed
+		const stat = await fsp.stat(filePath);
+		if(stat.isDirectory()){
+			return includeDirectory(filePath, aliases);
+		}
+
+		const relativePath = filePath.substring(currentDirectory.length + 1);
 		const inputFile = await new Promise((resolve, reject) => {
-			const stream = fs.createReadStream(configOptions.outputDir + path.sep + relativePath);
+			const stream = fs.createReadStream(filePath);
 			// This is here to catch the "EISDIR" and "ENOENT" errors
 			stream.once("error", reject);
 			stream.once("ready", () => {
@@ -162,9 +172,9 @@ const includeFile = async function(path, aliases = []){
 			isJSON = true;
 			relativePath = relativePath.substring(0, relativePath.length - 4) + ".js";
 		}
-		const outputFile = fs.createWriteStream(configOptions.outputDir + path.sep + relativePath);
+		const outputFile = fs.createWriteStream(path.resolve(configOptions.outputDir) + path.sep + relativePath);
 
-		let filename = ".../" + unixifyPath(relativePath.substring(0, filename.length - 3));
+		let filename = ".../" + unixifyPath(relativePath.substring(0, relativePath.length - 3));
 		const dirname = filename.substring(0, filename.lastIndexOf("/"));
 		for(let i = 0; i < aliases.length; i += 1){
 			aliases[i] = "..." + unixifyPath(aliases[i].substring(currentDirectory.length));
@@ -183,6 +193,7 @@ const includeFile = async function(path, aliases = []){
 					"\"] = function(require, module, __dirname, __filename){let exports" +
 					(isJSON ? "=" : ";")
 				);
+				console.log(inputFile.path, "->", outputFile.path);
 				inputFile.pipe(outputFile, {end: false});
 				await new Promise((resolve) => {
 					inputFile.once("close", resolve);
@@ -191,8 +202,9 @@ const includeFile = async function(path, aliases = []){
 			})()
 		]);
 	}catch(ex){
+		// console.log("ERRORRRRRRRRRRRRR debug:", filePath, ex.name, ex.message);
 		if(ex.code === "EISDIR"){
-			await includeDirectory(path, aliases);
+			await includeDirectory(filePath, aliases);
 		}else if(ex.code !== "ENOENT" && ex.message !== "Not json or js"){
 			throw ex;
 		}
@@ -231,7 +243,7 @@ const includeDependencies = async function(includedFiles){
 	let modulesToCheckOut = [];
 	for(let i = 0; i < includedFiles.length; i += 1){
 		const includedFile = includedFiles[i];
-		if(!includeFile.startsWith("node_modules/")){
+		if(!includedFile.startsWith("node_modules/")){
 			continue;
 		}
 		if(includedFile.indexOf("/", 13) !== -1){
@@ -255,6 +267,7 @@ const main = async function(){
 		}
 		// TODO: We should probably only update files that have been changed, but that would require keeping track of files we no longer use, and I'm lazy
 		await removeDirectoryContents(configOptions.outputDir);
+		await fsp.mkdir(configOptions.outputDir + "/node_modules");
 		
 		moduleListOutputStream = fs.createWriteStream(configOptions.outputDir + path.sep + "requirifier-module-list-main.js");
 		await writeAndWait(moduleListOutputStream, "globalThis.requirifierModuleList = [\n");
@@ -265,10 +278,15 @@ const main = async function(){
 			console.error("WARNING: Unless this is a single-page app, you shouldn't include all your dependencies.");
 			console.error("You only should include dependencies for the pages that need them!");
 		}else{
-			includeDependencies(configOptions.moduleList.main.includedFiles);
+			await includeDependencies(configOptions.moduleList.main.includedFiles);
 		}
 		for(let i = 0; i < configOptions.moduleList.main.includedFiles.length; i += 1){
+			console.log("includedFile:", configOptions.moduleList.main.includedFiles[i]);
 			await includeFile(path.resolve(configOptions.moduleList.main.includedFiles[i]));
+		}
+		if(configOptions.moduleList.main.startPoint.endsWith(".js")){
+			const startPoint = configOptions.moduleList.main.startPoint;
+			configOptions.moduleList.main.startPoint = startPoint.substring(0, startPoint.length - 3);
 		}
 		moduleListOutputStream.end(
 			"]\n" +
@@ -278,9 +296,13 @@ const main = async function(){
 		for(const name in configOptions.moduleList){
 			moduleListOutputStream = fs.createWriteStream(configOptions.outputDir + path.sep + "requirifier-module-list-" + name + ".js");
 			await writeAndWait(moduleListOutputStream, "globalThis.addRequirifierModules([\n");
-			includeDependencies(configOptions.moduleList[name].includedFiles);
+			await includeDependencies(configOptions.moduleList[name].includedFiles);
 			for(let i = 0; i < configOptions.moduleList[name].includedFiles.length; i += 1){
 				await includeFile(path.resolve(configOptions.moduleList[name].includedFiles[i]));
+			}
+			if(configOptions.moduleList[name].startPoint.endsWith(".js")){
+				const startPoint = configOptions.moduleList[name].startPoint;
+				configOptions.moduleList[name].startPoint = startPoint.substring(0, startPoint.length - 3);
 			}
 			moduleListOutputStream.end(
 				"],\n" +
@@ -290,7 +312,7 @@ const main = async function(){
 
 		await fsp.copyFile(__dirname + "/../files-to-copy/requirifier-init.js", configOptions.outputDir + path.sep + "requirifier-init.js")
 	}catch(ex){
-		console.error(ex.trace);
+		console.error(ex.stack);
 	}
 }
 main();
