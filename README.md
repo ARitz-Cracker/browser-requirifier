@@ -17,7 +17,7 @@ I made this (and didn't use require.js) for the following reasons:
 1. Prepare
     * Note: This module expects there to be a `node_modules` folder with all your dependencies in your working-directory
     * Create a file called `browser-requirifier-config.json` in your working directory with contents following this example:
-```json
+```js
 {
 	"moduleList": {
 		// This is required!
