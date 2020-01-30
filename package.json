@@ -1,0 +1,21 @@
+{
+	"name": "browser-requirifier",
+	"version": "0.0.0",
+	"description": "Lightweight-ish require.js replacement",
+	"bin": "bin/browser-requirifier.js",
+	"main": "index.js",
+	"scripts": {},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ARitz-Cracker/browser-requirifier"
+	},
+	"keywords": [],
+	"author": "Aritz Beobide-Cardinal <aritz@aritzcracker.ca>",
+	"license": "GPL3",
+	"bugs": {
+		"url": "https://github.com/ARitz-Cracker/browser-requirifier/issues"
+	},
+	"homepage": "https://github.com/ARitz-Cracker/browser-requirifier",
+	"dependencies": {},
+	"devDependencies": {}
+}

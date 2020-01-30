@@ -1,0 +1,30 @@
+{
+	
+	"moduleList": {
+		"main": {
+			"includedFiles": [
+				"index.js",
+				"lib/main",
+				"lib_browser/main_page",
+				"node_modules/base_dependency"
+			],
+			"startPoint": "index.js"
+		},
+		"some_subpage": {
+			"includedFiles": [
+				"some_subpage.js",
+				"lib_browser/some_subpage",
+				"node_modules/some_dependency",
+				"node_modules/other_dependency"
+			],
+			"startPoint": "some_subpage.js"
+		}
+	},
+	"excludedFiles": [
+		"lib_node",
+		"node_modules/some_lib/lib_node"
+	],
+	
+	"outputDir": "browser_scripts",
+	"baseURL": "/"
+}
