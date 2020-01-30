@@ -10,6 +10,7 @@ I made this (and didn't use require.js) for the following reasons:
 * I wanted sane error reports, none of that bundled single-file-javascript BS
 * I wanted a way to easily load modules only for pages that needed them. None of that "Load EVERYTHING even if you're only on the home page" crap
 * I wanted `__filename` and `__dirname` to work (mostly because of [`requirifier-requiredir`](https://github.com/ARitz-Cracker/requirifier-requiredir))
+* Most "established" libraries are big, bloated, and scary to me
 * I suffer from NIH syndrome
 
 ## So how do I use it?
@@ -63,3 +64,19 @@ I made this (and didn't use require.js) for the following reasons:
 	* Note: If you're importing loading optional lists at once, order of execution is undefined
 4. Upload to your server following what you specified in `baseURL`
 5. Include in your HTML as needed! 
+
+## Restrictions
+
+This `require()` implementation is different from NodeJS's in the following ways:
+* There really aren't any "Module Objects" per-say, what's exposed to you is standard objects.
+* `require.main` doesn't work
+* `module.children` doesn't work
+* `module.paths` doesn't work
+* `module.requrie` doesn't work
+* Deleting whatevers in `require.cache` won't reload the file, it'll just re-execute the file.
+
+Everything is (more or less) functionally identical.
+
+## Other notes
+
+* This package isn't intended to provide or bundle the code neccisary to use standard node libraries in the browser. [You can check out what browserify uses for that](https://github.com/browserify/browserify#compatibility). Now, you might be wondering, why don't I just use browserify? ... Shut up.
