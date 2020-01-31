@@ -2,6 +2,7 @@
 const path = require("path");
 const fs = require("fs");
 const fsp = fs.promises;
+const defaultPackageIncludes = require("../lib/default-package-includes.json");
 let moduleListOutputStream;
 const writeAndWait = async function(stream, data){
 	return new Promise((resolve, reject) => {
@@ -91,11 +92,28 @@ const correctMainFileName = async function(dir, filename){
 	return filename;
 }
 
+const recursiveMkDirIfNotExists = async function(dir){
+	dir = path.resolve(dir); // Make sure directory seperators are consistent
+	console.log("Making:", dir);
+	try{
+		await fsp.mkdir(dir);
+	}catch(ex){
+		if(ex.code === "EEXIST"){
+			return;
+		}
+		if(ex.code !== "ENOENT"){
+			throw ex;
+		}
+		await recursiveMkDirIfNotExists(dir.substring(0, dir.lastIndexOf(path.sep)));
+		await fsp.mkdir(dir);
+	}
+}
+
 const includeDirectory = async function(dir, aliasesForIndexFile = []){
 	
 	aliasesForIndexFile.push(dir);
 	const relativePath = dir.substring(currentDirectory.length + 1);
-	await fsp.mkdir(configOptions.outputDir + path.sep + relativePath);
+	await recursiveMkDirIfNotExists(configOptions.outputDir + path.sep + relativePath);
 	const packageOptions = await readJSONIfExists(dir + path.sep + "package.json");
 	if(packageOptions == null){
 		// console.log("dir:", dir);
@@ -114,25 +132,33 @@ const includeDirectory = async function(dir, aliasesForIndexFile = []){
 			packageOptions.browser = await correctMainFileName(dir, packageOptions.browser);
 		}
 		let mainFile = packageOptions.browser || packageOptions.main;
-		if(packageOptions.browserRequirifierVerbatim != null){
-			for(let i = 0; i < packageOptions.browserRequirifierVerbatim.length; i += 1){
-				await copyVerbatim(dir + path.sep + packageOptions.browserRequirifierVerbatim[i]);
+		packageOptions.browserRequirifier = packageOptions.browserRequirifier || defaultPackageIncludes[packageOptions.name];
+		console.log(packageOptions.browserRequirifier);
+		if(packageOptions.browserRequirifier == null){
+			console.error("WARNING: " + packageOptions.name + " doesn't have the browserRequirifier propery defined! You better be excluding files you don't need yourself");
+			packageOptions.browserRequirifier = {};
+		}
+		if(packageOptions.browserRequirifier.verbatim != null){
+			for(let i = 0; i < packageOptions.browserRequirifier.verbatim.length; i += 1){
+				await copyVerbatim(dir + path.sep + packageOptions.browserRequirifier.verbatim[i]);
 			}
 		}
-		if(packageOptions.browserRequirifierExclude == null && packageOptions.browserRequirifierInclude == null){
-			console.error("WARNING: " + packageOptions.name + " doesn't have the browserRequirifier properties defined! You better be excluding files you don't need yourself");
-		}
-		if(packageOptions.browserRequirifierExclude != null){
-			for(let i = 0; i < packageOptions.browserRequirifierExclude.length; i += 1){
-				isExcluded[path.resolve(dir + path.sep + packageOptions.browserRequirifierExclude[i])] = true;
+		if(packageOptions.browserRequirifier.exclude != null){
+			for(let i = 0; i < packageOptions.browserRequirifier.exclude.length; i += 1){
+				isExcluded[path.resolve(dir + path.sep + packageOptions.browserRequirifier.exclude[i])] = true;
 			}
 		}
-		if(packageOptions.browserRequirifierInclude == null){
-			packageOptions.browserRequirifierInclude = await fsp.readdir(dir);
+		if(packageOptions.browserRequirifier.include == null){
+			packageOptions.browserRequirifier.include = await fsp.readdir(dir);
 			// Only include package.json if the package explicitly wants it
-			removeItemFromArray(packageOptions.browserRequirifierInclude, "package.json");
+			removeItemFromArray(packageOptions.browserRequirifier.include, "package.json");
 		}
-		const files = packageOptions.browserRequirifierInclude;
+		if(mainFile.indexOf("/") !== -1){
+			// await recursiveMkDirIfNotExists(dir + path.sep + mainFile.substring(0, mainFile.lastIndexOf("/")));
+			await recursiveMkDirIfNotExists(configOptions.outputDir + relativePath + path.sep + mainFile.substring(0, mainFile.lastIndexOf("/")));
+		}
+
+		const files = packageOptions.browserRequirifier.include;
 		removeItemFromArray(files, packageOptions.main);
 		removeItemFromArray(files, packageOptions.browser);
 		await includeFile(dir + path.sep + mainFile, aliasesForIndexFile);
@@ -154,7 +180,7 @@ const includeFile = async function(filePath, aliases = []){
 			return includeDirectory(filePath, aliases);
 		}
 
-		const relativePath = filePath.substring(currentDirectory.length + 1);
+		let relativePath = filePath.substring(currentDirectory.length + 1);
 		const inputFile = await new Promise((resolve, reject) => {
 			const stream = fs.createReadStream(filePath);
 			// This is here to catch the "EISDIR" and "ENOENT" errors
@@ -264,10 +290,13 @@ const includeDependencies = async function(includedFiles){
 }
 
 const copyVerbatim = async function(resolvedFilePath){
+	if(isExcluded[resolvedFilePath]){
+		return;
+	}
 	const relativePath = resolvedFilePath.substring(currentDirectory.length);
 	try{
 		const files = await fsp.readdir(resolvedFilePath);
-		await fsp.mkdir(configOptions.outputDir + relativePath);
+		await recursiveMkDirIfNotExists(configOptions.outputDir + relativePath);
 		for(let i = 0; i < files.length; i += 1){
 			await copyVerbatim(resolvedFilePath + path.sep + files[i]);	
 		}
