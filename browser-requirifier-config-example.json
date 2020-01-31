@@ -8,6 +8,10 @@
 				"lib_browser/main_page",
 				"node_modules/base_dependency"
 			],
+			"copyVerbatim": [
+				"file.txt",
+				"assets_folder"
+			],
 			"startPoint": "index.js"
 		},
 		"some_subpage": {

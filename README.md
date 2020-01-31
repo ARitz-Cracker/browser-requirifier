@@ -31,6 +31,11 @@ I made this (and didn't use require.js) for the following reasons:
 				// You don't need to specify a module's dependencies, that'll happen automatically. But you have to specify YOUR dependencies
 				"node_modules/base_dependency"
 			],
+			// This is optional
+			"copyVerbatim": [
+				"file.txt",
+				"assets_folder"
+			],
 			"startPoint": "browser.js"
 		},
 		// This is optional, name of list can be arbitrary;
@@ -46,7 +51,7 @@ I made this (and didn't use require.js) for the following reasons:
 		}
 		// More lists can be added
 	},
-	// List of files/folders to ignore
+	// List of files/folders to ignore, only applies to includedFiles, not copyVerbatim
 	"excludedFiles": [
 		"lib_node",
 		"node_modules/some_dependency/lib_node"
@@ -76,6 +81,13 @@ This `require()` implementation is different from NodeJS's in the following ways
 * Deleting whatevers in `require.cache` won't reload the file, it'll just re-execute the file.
 
 Everything is (more or less) functionally identical.
+
+## I don't want to re-define what files I upload for each project that shares dependencies
+
+Good thing this thing can read `package.json` files! New properties will have to be added, though
+* `browserRequirifierVerbatim` - Files/folders to copy, Compiled WASM or other binary files come to mind
+* `browserRequirifierInclude` - Files/folders to include.
+* `browserRequirifierExclude` - Files/folders to ignore. Your test folder should be in here
 
 ## Other notes
 

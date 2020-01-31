@@ -98,7 +98,7 @@ const includeDirectory = async function(dir, aliasesForIndexFile = []){
 	await fsp.mkdir(configOptions.outputDir + path.sep + relativePath);
 	const packageOptions = await readJSONIfExists(dir + path.sep + "package.json");
 	if(packageOptions == null){
-		console.log("dir:", dir);
+		// console.log("dir:", dir);
 		const files = await fsp.readdir(dir);
 		removeItemFromArray("index.js");
 		removeItemFromArray("index.json");
@@ -108,14 +108,17 @@ const includeDirectory = async function(dir, aliasesForIndexFile = []){
 			await includeFile(dir + path.sep + files[i]);
 		}
 	}else{
-		console.log("package:", dir);
+		// console.log("package:", dir);
 		packageOptions.main = await correctMainFileName(dir, packageOptions.main);
 		if(packageOptions.browser){
 			packageOptions.browser = await correctMainFileName(dir, packageOptions.browser);
 		}
 		let mainFile = packageOptions.browser || packageOptions.main;
-
-
+		if(packageOptions.browserRequirifierVerbatim != null){
+			for(let i = 0; i < packageOptions.browserRequirifierVerbatim.length; i += 1){
+				await copyVerbatim(dir + path.sep + packageOptions.browserRequirifierVerbatim[i]);
+			}
+		}
 		if(packageOptions.browserRequirifierExclude == null && packageOptions.browserRequirifierInclude == null){
 			console.error("WARNING: " + packageOptions.name + " doesn't have the browserRequirifier properties defined! You better be excluding files you don't need yourself");
 		}
@@ -194,7 +197,7 @@ const includeFile = async function(filePath, aliases = []){
 					"\"] = function(require, module, __dirname, __filename){let exports" +
 					(isJSON ? "=" : ";")
 				);
-				console.log(inputFile.path, "->", outputFile.path);
+				// console.log(inputFile.path, "->", outputFile.path);
 				inputFile.pipe(outputFile, {end: false});
 				await new Promise((resolve) => {
 					inputFile.once("close", resolve);
@@ -260,6 +263,22 @@ const includeDependencies = async function(includedFiles){
 	await includeDependencyModuleDependents(includedFiles, alreadyIncludedModules, modulesToCheckOut, true);
 }
 
+const copyVerbatim = async function(resolvedFilePath){
+	const relativePath = resolvedFilePath.substring(currentDirectory.length);
+	try{
+		const files = await fsp.readdir(resolvedFilePath);
+		await fsp.mkdir(configOptions.outputDir + relativePath);
+		for(let i = 0; i < files.length; i += 1){
+			await copyVerbatim(resolvedFilePath + path.sep + files[i]);	
+		}
+	}catch(ex){
+		if(ex.code === "ENOTDIR"){
+			await fsp.copyFile(resolvedFilePath, configOptions.outputDir + relativePath);
+		}
+	}
+	//configOptions.outputDir + path.sep
+}
+
 const main = async function(){
 	try{
 		configOptions = JSON.parse(await fsp.readFile("browser-requirifier-config.json", "utf8"));
@@ -282,9 +301,15 @@ const main = async function(){
 			await includeDependencies(configOptions.moduleList.main.includedFiles);
 		}
 		for(let i = 0; i < configOptions.moduleList.main.includedFiles.length; i += 1){
-			console.log("includedFile:", configOptions.moduleList.main.includedFiles[i]);
+			// console.log("includedFile:", configOptions.moduleList.main.includedFiles[i]);
 			await includeFile(path.resolve(configOptions.moduleList.main.includedFiles[i]));
 		}
+		if(configOptions.moduleList.main.copyVerbatim != null){
+			for(let i = 0; i < configOptions.moduleList.main.copyVerbatim.length; i += 1){
+				await copyVerbatim(path.resolve(configOptions.moduleList.main.copyVerbatim[i]));
+			}
+		}
+
 		if(configOptions.moduleList.main.startPoint.endsWith(".js")){
 			const startPoint = configOptions.moduleList.main.startPoint;
 			configOptions.moduleList.main.startPoint = startPoint.substring(0, startPoint.length - 3);
@@ -302,6 +327,11 @@ const main = async function(){
 			for(let i = 0; i < configOptions.moduleList[name].includedFiles.length; i += 1){
 				await includeFile(path.resolve(configOptions.moduleList[name].includedFiles[i]));
 			}
+			if(configOptions.moduleList[name].copyVerbatim != null){
+				for(let i = 0; i < configOptions.moduleList[name].copyVerbatim.length; i += 1){
+					await copyVerbatim(path.resolve(configOptions.moduleList[name].copyVerbatim[i]));
+				}
+			}
 			if(configOptions.moduleList[name].startPoint.endsWith(".js")){
 				const startPoint = configOptions.moduleList[name].startPoint;
 				configOptions.moduleList[name].startPoint = startPoint.substring(0, startPoint.length - 3);
@@ -313,6 +343,7 @@ const main = async function(){
 		}
 
 		await fsp.copyFile(__dirname + "/../files-to-copy/requirifier-init.js", configOptions.outputDir + path.sep + "requirifier-init.js")
+		console.log("done!");
 	}catch(ex){
 		console.error(ex.stack);
 	}
