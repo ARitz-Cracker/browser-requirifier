@@ -1,19 +1,3 @@
-/*
-// The following must be defined. Either here, or in another file
-globalThis.requirifierModuleList = [
-	{
-		url: "/js/requirifier_modules/node_modules/awesomeLib/index.js",
-		requireNames: [
-			".../node_modules/awesomeLib",
-			".../node_modules/awesomeLib/index"
-		],
-		dirname: ".../node_modules/awesomeLib",
-		filename: ".../node_modules/awesomeLib/index" // Look up files by this
-	},
-	...
-]
-*/
-
 (() => {
 const resolveMaps = {}
 const resolvePath = function(path){
@@ -64,6 +48,9 @@ const requireModule = function(moduleName, parentFile){
 	let searchIndex = parentFile.lastIndexOf("/node_modules/");
 	let moduleFile = globalThis.requirifierBaseURL + "node_modules/" + moduleName;
 	if(searchIndex === -1){
+		if(resolveMaps[moduleFile] === undefined){
+			throw new Error("Module " + moduleName + " not found!");
+		}
 		return requireAbsolute(resolveMaps[moduleFile], parentFile);
 	}
 	moduleFile = parentFile.substring(0, searchIndex + 14) + moduleName;

@@ -287,7 +287,6 @@ const main = async function(){
 		}
 		// TODO: We should probably only update files that have been changed, but that would require keeping track of files we no longer use, and I'm lazy
 		await removeDirectoryContents(configOptions.outputDir);
-		await fsp.mkdir(configOptions.outputDir + "/node_modules");
 		
 		moduleListOutputStream = fs.createWriteStream(configOptions.outputDir + path.sep + "requirifier-module-list-main.js");
 		await writeAndWait(moduleListOutputStream, "globalThis.requirifierModuleList = [\n");
@@ -298,6 +297,7 @@ const main = async function(){
 			console.error("WARNING: Unless this is a single-page app, you shouldn't include all your dependencies.");
 			console.error("You only should include dependencies for the pages that need them!");
 		}else{
+			await fsp.mkdir(configOptions.outputDir + "/node_modules");
 			await includeDependencies(configOptions.moduleList.main.includedFiles);
 		}
 		for(let i = 0; i < configOptions.moduleList.main.includedFiles.length; i += 1){
