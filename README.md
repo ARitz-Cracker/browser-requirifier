@@ -66,7 +66,7 @@ I made this (and didn't use require.js) for the following reasons:
 	* All your files specified in your list - edited so that they can be loaded by `requirifier-init.js`
 	* `requirifier-module-list-main.js` - Contains the list of modules specified in `moduleList.main.includedFiles`. `moduleList.main.startPoint` will be executed once [`DOMContentLoaded`](https://developer.mozilla.org/en-US/docs/Web/API/Window/DOMContentLoaded_event) happens.
 	* `requirifier-module-list-$otherList.js` - Contains the list of modules specified in `moduleList.$otherList.includedFiles`. `moduleList.$otherList.startPoint` will be executed syncronously after `moduleList.main.startPoint`
-	* Note: If you're importing loading optional lists at once, order of execution is undefined
+	* Note: If you're importing multiple optional lists at once, order of execution is undefined
 4. Upload to your server following what you specified in `baseURL`
 5. Include in your HTML as needed! 
 
