@@ -133,6 +133,11 @@ const addNewModuleDefinitions = async function(moduleList){
 						throw new Error("modules.children isn't accessable in this context")
 					}
 				},
+				exports: {
+					configurable: false,
+					value: {},
+					writable: true
+				},
 				parent: {
 					configurable: false,
 					value: parentFile,

@@ -194,7 +194,7 @@ const includeFile = async function(filePath, aliases = []){
 			(async () => {
 				await writeAndWait(outputFile, "globalThis.requirifierModuleDefinitions[\"" +
 					stringEscapeSquences(filename) +
-					"\"] = function(require, module, __dirname, __filename){let exports" +
+					"\"] = function(require, module, __dirname, __filename){let exports = module.exports" +
 					(isJSON ? "=" : ";")
 				);
 				// console.log(inputFile.path, "->", outputFile.path);
@@ -202,7 +202,7 @@ const includeFile = async function(filePath, aliases = []){
 				await new Promise((resolve) => {
 					inputFile.once("close", resolve);
 				});
-				outputFile.end("\n;module.exports = exports || module.exports || null;}\n");
+				outputFile.end("}\n");
 			})()
 		]);
 	}catch(ex){
