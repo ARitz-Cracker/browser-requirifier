@@ -170,19 +170,20 @@ const includeFile = async function(filePath, aliases = []){
 		let isJSON = false;
 		if(relativePath.endsWith(".json")){
 			isJSON = true;
-			relativePath = relativePath.substring(0, relativePath.length - 4) + ".js";
+			relativePath = relativePath.substring(0, relativePath.length - 4) + "js";
 		}
 		const outputFile = fs.createWriteStream(path.resolve(configOptions.outputDir) + path.sep + relativePath);
 
-		let filename = ".../" + unixifyPath(relativePath.substring(0, relativePath.length - 3));
+		let filename = configOptions.baseURL + unixifyPath(relativePath);
 		const dirname = filename.substring(0, filename.lastIndexOf("/"));
 		for(let i = 0; i < aliases.length; i += 1){
-			aliases[i] = "..." + unixifyPath(aliases[i].substring(currentDirectory.length));
+			aliases[i] = configOptions.baseURL + unixifyPath(aliases[i].substring(currentDirectory.length + 1));
 		}
 		aliases.push(filename);
+		aliases.push(filename.substring(0, filename.length - 3)); // file and file.js both resolve to file.js
 		await Promise.all([
 			addModuleDefinition({
-				url: configOptions.baseURL + unixifyPath(relativePath),
+				url: filename,
 				requireNames: aliases,
 				filename,
 				dirname
@@ -290,7 +291,8 @@ const main = async function(){
 		}
 		moduleListOutputStream.end(
 			"]\n" +
-			"globalThis.requirifierMainModule = \".../" + stringEscapeSquences(configOptions.moduleList.main.startPoint) + "\";\n"
+			"globalThis.requirifierMainModule = \"" + configOptions.baseURL + stringEscapeSquences(configOptions.moduleList.main.startPoint) + "\";\n" +
+			"globalThis.requirifierBaseURL = \"" + configOptions.baseURL + "\";\n"
 		);
 		delete configOptions.moduleList.main;
 		for(const name in configOptions.moduleList){
@@ -306,7 +308,7 @@ const main = async function(){
 			}
 			moduleListOutputStream.end(
 				"],\n" +
-				"\".../" + stringEscapeSquences(configOptions.moduleList[name].startPoint) + "\");\n"
+				"\"" + configOptions.baseURL + stringEscapeSquences(configOptions.moduleList[name].startPoint) + "\");\n"
 			);
 		}
 

@@ -62,7 +62,7 @@ const moduleMainMainFuncs = {};
 const cachedModuleResults = {};
 const requireModule = function(moduleName, parentFile){
 	let searchIndex = parentFile.lastIndexOf("/node_modules/");
-	let moduleFile = ".../node_modules/" + moduleName;
+	let moduleFile = globalThis.requirifierBaseURL + "node_modules/" + moduleName;
 	if(searchIndex === -1){
 		return requireAbsolute(resolveMaps[moduleFile], parentFile);
 	}
@@ -73,6 +73,9 @@ const requireModule = function(moduleName, parentFile){
 			throw new Error("Module " + moduleName + " not found!");
 		}
 		moduleFile = moduleFile.substring(0, searchIndex + 14) + moduleName;
+	}
+	if(resolveMaps[moduleFile] === undefined){
+		throw new Error("Module " + moduleName + " not found!");
 	}
 	return requireAbsolute(resolveMaps[moduleFile]);
 }
@@ -104,7 +107,7 @@ const addNewModuleDefinitions = async function(moduleList){
 					modPath = modPath.substring(0, modPath.length - 5);
 				}
 				return requireAbsolute(resolvePath(moduleProperties.dirname + "/" + modPath), moduleProperties.filename);
-			}else if(modPath.startsWith(".../")){
+			}else if(modPath.startsWith(globalThis.requirifierBaseURL)){
 				return requireAbsolute(resolvePath(modPath), moduleProperties.filename);
 			}else{
 				return requireModule(modPath, moduleProperties.filename);
@@ -186,7 +189,7 @@ const addNewModuleDefinitions = async function(moduleList){
 				reqFunc,
 				modObj,
 				moduleProperties.dirname,
-				moduleProperties.filename = ".js"
+				moduleProperties.filename
 			);
 			return modObj.exports;
 		}
@@ -209,7 +212,7 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 			throw new Error("Main module list not defined!");
 		}
 		await addNewModuleDefinitions(globalThis.requirifierModuleList);
-		requireAbsolute(globalThis.requirifierMainModule, null);
+		requireAbsolute(resolveMaps[globalThis.requirifierMainModule], null);
 		mainRequirifierResolve();
 	}catch(ex){
 		console.error(ex);
@@ -221,8 +224,8 @@ globalThis.addRequirifierModules = async function(defs, startModule){
 	await mainRequirifierPromise;
 	try{
 		await addNewModuleDefinitions(defs);
-		if(startModule && startModule !== ".../undefined" && startModule !== ".../null"){
-			requireAbsolute(startModule, null);
+		if(startModule){
+			requireAbsolute(resolveMaps[startModule], null);
 		}
 	}catch(ex){
 		console.error(ex);
