@@ -372,6 +372,7 @@ const main = async function(){
 		}
 
 		await fsp.copyFile(__dirname + "/../files-to-copy/requirifier-init.js", configOptions.outputDir + path.sep + "requirifier-init.js")
+		await fsp.copyFile(__dirname + "/../files-to-copy/global-this-shim.js", configOptions.outputDir + path.sep + "global-this-shim.js")
 		console.log("done!");
 	}catch(ex){
 		console.error(ex.stack);

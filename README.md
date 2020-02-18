@@ -63,6 +63,7 @@ I made this (and didn't use require.js) for the following reasons:
 2. Execute `browser-requirifier` (assuming this is globally installed) in your working directory.
 3. Observe the files placed in your `outputDir`
     * `requirifier-init.js` - Needed for everything.
+	* `global-this-shim.js` - Needed for edge because it's special.
 	* All your files specified in your list - edited so that they can be loaded by `requirifier-init.js`
 	* `requirifier-module-list-main.js` - Contains the list of modules specified in `moduleList.main.includedFiles`. `moduleList.main.startPoint` will be executed once [`DOMContentLoaded`](https://developer.mozilla.org/en-US/docs/Web/API/Window/DOMContentLoaded_event) happens.
 	* `requirifier-module-list-$otherList.js` - Contains the list of modules specified in `moduleList.$otherList.includedFiles`. `moduleList.$otherList.startPoint` will be executed syncronously after `moduleList.main.startPoint`
