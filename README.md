@@ -16,8 +16,7 @@ I made this (and didn't use require.js) for the following reasons:
 ## So how do I use it?
 
 1. Prepare
-    * Note: This module expects there to be a `node_modules` folder with all your dependencies in your working-directory
-    * Create a file called `browser-requirifier-config.json` in your working directory with contents following this example:
+    * Create a file called `browser-requirifier-config.json` in your project directory with contents following this example:
 ```js
 {
 	"moduleList": {
@@ -27,14 +26,16 @@ I made this (and didn't use require.js) for the following reasons:
 			"includedFiles": [
 				"index.js",
 				"lib/main",
-				"lib_browser/main_page",
-				// You don't need to specify a module's dependencies, that'll happen automatically. But you have to specify YOUR dependencies
-				"node_modules/base_dependency"
+				"lib_browser/main_page"
 			],
 			// This is optional
 			"copyVerbatim": [
 				"file.txt",
 				"assets_folder"
+			],
+			// You don't need to specify a module's dependencies, that'll happen automatically. But you have to specify YOUR dependencies
+			"dependencies": [
+				"base_dependency"
 			],
 			"startPoint": "browser.js"
 		},
@@ -44,19 +45,20 @@ I made this (and didn't use require.js) for the following reasons:
 			"includedFiles": [
 				"some_subpage.js",
 				"lib_browser/some_subpage",
-				"node_modules/some_dependency",
-				"node_modules/other_dependency"
+			],
+			"dependencies": [
+				"some_dependency",
+				"other_dependency"
 			],
 			"startPoint": "some_subpage.js"
 		}
 		// More lists can be added
 	},
-	// List of files/folders to ignore, only applies to includedFiles, not copyVerbatim
+	// List of files/folders to ignore
 	"excludedFiles": [
-		"lib_node",
-		"node_modules/some_dependency/lib_node"
+		"lib_node"
 	],
-	"outputDir": "browser_exports",
+	"outputDir": "www_files/js",
 	"baseURL": "/js/"
 }
 ```
@@ -74,14 +76,14 @@ I made this (and didn't use require.js) for the following reasons:
 ## Restrictions
 
 This `require()` implementation is different from NodeJS's in the following ways:
-* There really aren't any "Module Objects" per-say, what's exposed to you is standard objects.
+* There really aren't any "Module Objects" per-say, what's exposed to you are standard objects.
 * `require.main` doesn't work
 * `module.children` doesn't work
 * `module.paths` doesn't work
-* `module.requrie` doesn't work
+* `module.require` doesn't work
 * Deleting whatevers in `require.cache` won't reload the file, it'll just re-execute the file.
 
-Everything is (more or less) functionally identical.
+Everything else is (more or less) functionally identical.
 
 ## I don't want to re-define what files I upload for each project that shares dependencies
 

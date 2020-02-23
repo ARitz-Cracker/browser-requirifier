@@ -1,6 +1,6 @@
 {
 	"name": "browser-requirifier",
-	"version": "0.0.7",
+	"version": "0.1.0",
 	"description": "Lightweight-ish require.js replacement",
 	"bin": "bin/browser-requirifier.js",
 	"main": "index.js",
@@ -16,6 +16,8 @@
 		"url": "https://github.com/ARitz-Cracker/browser-requirifier/issues"
 	},
 	"homepage": "https://github.com/ARitz-Cracker/browser-requirifier",
-	"dependencies": {},
+	"dependencies": {
+		"semver": "^7.1.3"
+	},
 	"devDependencies": {}
 }
