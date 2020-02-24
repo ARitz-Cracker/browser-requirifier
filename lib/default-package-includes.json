@@ -4,5 +4,8 @@
 	},
 	"bignumber.js": {
 		"include": []
+	},
+	"events": {
+		"include": []
 	}
 }
