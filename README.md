@@ -91,6 +91,7 @@ Good thing this thing can read `package.json` files! You can add a `browserRequi
 * `verbatim` - Files/folders to copy, Compiled WASM or other binary files come to mind. Empty by default
 * `include` - Files/folders to include. Whatever's in `main` or `browser` will always get included automatically. If nothing else is required, set this to an empty array, because it includes all `*.js` and `*.json` files by default.
 * `exclude` - Files/folders to ignore. Your test folder should be in here. Empty by default
+* `excludedDependencies` - Dependencies to ignore. Server-only stuff should be here.
 
 ## Other notes
 
