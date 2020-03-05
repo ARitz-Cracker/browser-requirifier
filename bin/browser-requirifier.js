@@ -141,7 +141,7 @@ const exportModuleList = async function(outputDir, baseURL, basePath, moduleList
 	}else{
 		ws.end(
 			"],\n" +
-			"\"" + baseURL + stringEscapeSquences(moduleList.startPoint) + "\");\n"
+			"\"" + baseURL + stringEscapeSquences(moduleList.mainModule) + "\");\n"
 		);
 	}
 }
