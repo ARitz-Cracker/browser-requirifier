@@ -198,6 +198,9 @@ let mainRequirifierPromise = new Promise((resolve, reject) => {
 	mainRequirifierReject = reject;
 });
 
+
+globalThis.requirifierModulesLoaded = Promise.resolve(true);
+
 document.addEventListener("DOMContentLoaded", async function(event) { 
 	try{
 		if(!Array.isArray(globalThis.requirifierModuleList)){
@@ -213,15 +216,22 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 	}
 });
 globalThis.addRequirifierModules = async function(defs, startModule){
+	let requirifierLoadedResolve;
+	globalThis.requirifierModulesLoaded = new Promise((resolve) => {
+		requirifierLoadedResolve = resolve;
+	});
 	await mainRequirifierPromise;
 	try{
 		await addNewModuleDefinitions(defs);
 		if(startModule){
 			requireAbsolute(resolveMaps[startModule], null);
 		}
+		requirifierLoadedResolve(true);
 	}catch(ex){
 		console.error(ex);
 		alert("Unable to load JavaScript modules. Some (or all) site features may not be available");
+		requirifierLoadedResolve(false);
 	}
+	
 }
 })();
