@@ -237,7 +237,7 @@ globalThis.addRequirifierModules = async function(defs, startModule){
 // For all your REPL needs!
 globalThis.require = function(id){
 	if(id.startsWith("/")){
-		return requireAbsolute(resolveMaps[startModule]);
+		return requireAbsolute(resolveMaps[id], null);
 	}else{
 		return requireModule(id);
 	}
