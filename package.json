@@ -1,6 +1,6 @@
 {
 	"name": "browser-requirifier",
-	"version": "0.4.1",
+	"version": "0.4.2",
 	"description": "Lightweight-ish require.js replacement",
 	"bin": "bin/browser-requirifier.js",
 	"main": "index.js",
