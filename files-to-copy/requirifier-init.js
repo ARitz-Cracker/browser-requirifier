@@ -85,7 +85,7 @@ const addNewModuleDefinitions = async function(moduleList){
 		const moduleProperties = moduleList[i];
 		const reqFunc = (modPath) => {
 			if(modPath.startsWith("/")){
-				throw new Error("Cannot require an absolute path");
+				return requireAbsolute(resolveMaps[modPath], moduleProperties.filename);
 			}else if(modPath.startsWith("./") || modPath.startsWith("../")){
 				// If any modules have a folder name ending in .js, they're going to have a bad time
 				if(modPath.endsWith(".js")){
@@ -239,7 +239,7 @@ globalThis.require = function(id){
 	if(id.startsWith("/")){
 		return requireAbsolute(resolveMaps[id], null);
 	}else{
-		return requireModule(id);
+		return requireAbsolute(resolveMaps[globalThis.requirifierBaseURL + "node_modules/" + id]);
 	}
 }
 })();
