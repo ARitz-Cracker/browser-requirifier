@@ -87,12 +87,6 @@ const addNewModuleDefinitions = async function(moduleList){
 			if(modPath.startsWith("/")){
 				return requireAbsolute(resolveMaps[modPath], moduleProperties.filename);
 			}else if(modPath.startsWith("./") || modPath.startsWith("../")){
-				// If any modules have a folder name ending in .js, they're going to have a bad time
-				if(modPath.endsWith(".js")){
-					modPath = modPath.substring(0, modPath.length - 3);
-				}else if(modPath.endsWith(".json")){
-					modPath = modPath.substring(0, modPath.length - 5);
-				}
 				return requireAbsolute(resolvePath(moduleProperties.dirname + "/" + modPath), moduleProperties.filename);
 			}else if(modPath.startsWith(globalThis.requirifierBaseURL)){
 				return requireAbsolute(resolvePath(modPath), moduleProperties.filename);
