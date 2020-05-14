@@ -81,6 +81,9 @@ const exportJsFile = async function(fromFile, basePath, baseURL, outputDir, newP
 		filename,
 		dirname: filename.substring(0, filename.lastIndexOf("/"))
 	}
+	if(isJSON){
+		result.requireNames.push(filename + "on");
+	}
 	if(filename.endsWith("/index.js")){
 		result.requireNames.push(result.dirname);
 	}
