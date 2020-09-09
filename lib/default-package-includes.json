@@ -13,5 +13,8 @@
 	},
 	"xterm-addon-fit": {
 		"include": []
+	},
+	"leaflet": {
+		"include": []
 	}
 }
