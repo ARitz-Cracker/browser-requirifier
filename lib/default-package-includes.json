@@ -16,5 +16,13 @@
 	},
 	"leaflet": {
 		"include": []
+	},
+	"uuid": {
+		"include": ["dist"],
+		"exclude": [
+			"bin",
+			"esm-browser",
+			"esm-node"
+		]
 	}
 }
