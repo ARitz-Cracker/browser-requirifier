@@ -109,13 +109,18 @@ const exportVerbatimFiles = async function(fileList, basePath, outputDir, newPre
 const exportModuleList = async function(outputDir, baseURL, basePath, moduleListName, moduleList, allPolyfills){
 	const ws = fs.createWriteStream(outputDir + path.sep + "requirifier-module-list-" + moduleListName + ".js");
 	const polyfillList = {};
-	moduleList.polyfillsRequired.forEach(v => {
-		if(polyfillTests[v] == null){
+	let polyfillFunctions = "{";
+	if(moduleList.polyfillsRequired.size > 0){
+		polyfillFunctions += "\n";
+	}
+	moduleList.polyfillsRequired.forEach(testName => {
+		if(polyfillTests[testName] == null){
 			throw new Error("No polyfill test defined for " + v);
 		}
-		polyfillList[v] = polyfillTests[v];
-		allPolyfills.add(v);
+		allPolyfills.add(testName);
+		polyfillFunctions += "\t" + JSON.stringify(testName) + ": function(){" + polyfillTests[testName] + "},\n";
 	});
+	polyfillFunctions += "}";
 
 	if(moduleListName === "main"){
 		await writeAndWait(ws, "globalThis.requirifierModuleList = [\n");
@@ -150,13 +155,13 @@ const exportModuleList = async function(outputDir, baseURL, basePath, moduleList
 			"]\n" +
 			"globalThis.requirifierMainModule = \"" + baseURL + stringEscapeSquences(moduleList.mainModule) + "\";\n" +
 			"globalThis.requirifierBaseURL = \"" + baseURL + "\";\n" +
-			"globalThis.requirifierPolyfills = " + JSON.stringify(polyfillList, null, "\t") + "\n"
+			"globalThis.requirifierPolyfills = " + polyfillFunctions + "\n"
 		);
 	}else{
 		ws.end(
 			"],\n" +
 			"\"" + baseURL + stringEscapeSquences(moduleList.mainModule) + "\",\n" +
-			JSON.stringify(polyfillList, null, "\t") + ");\n"
+			polyfillFunctions + ");\n"
 		);
 	}
 }

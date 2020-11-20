@@ -77,7 +77,7 @@ const requireAbsolute = function(resolvedPath, parentFile){
 const addNewModuleDefinitions = async function(moduleList, polyfillTests){
 	const polyfillPromises = [];
 	for (const polyfillName in polyfillTests){
-		if((new Function(polyfillTests[polyfillName]))()){
+		if(polyfillTests[polyfillName]()){
 			polyfillPromises.push(loadJavascript(globalThis.requirifierBaseURL + "requirifier-polyfills/" + polyfillName + ".js"));
 		}
 	}
