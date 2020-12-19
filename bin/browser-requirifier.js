@@ -2,6 +2,7 @@
 const fs = require("fs");
 const fsp = fs.promises;
 const {generateFileList} = require("../lib/file-finder");
+const polyfillTests = require("../lib/polyfill-tests");
 const path = require("path");
 const util = require("util");
 
@@ -105,8 +106,22 @@ const exportVerbatimFiles = async function(fileList, basePath, outputDir, newPre
 	}
 }
 
-const exportModuleList = async function(outputDir, baseURL, basePath, moduleListName, moduleList){
+const exportModuleList = async function(outputDir, baseURL, basePath, moduleListName, moduleList, allPolyfills){
 	const ws = fs.createWriteStream(outputDir + path.sep + "requirifier-module-list-" + moduleListName + ".js");
+	const polyfillList = {};
+	let polyfillFunctions = "{";
+	if(moduleList.polyfillsRequired.size > 0){
+		polyfillFunctions += "\n";
+	}
+	moduleList.polyfillsRequired.forEach(testName => {
+		if(polyfillTests[testName] == null){
+			throw new Error("No polyfill test defined for " + v);
+		}
+		allPolyfills.add(testName);
+		polyfillFunctions += "\t" + JSON.stringify(testName) + ": function(){" + polyfillTests[testName] + "},\n";
+	});
+	polyfillFunctions += "}";
+
 	if(moduleListName === "main"){
 		await writeAndWait(ws, "globalThis.requirifierModuleList = [\n");
 	}else{
@@ -139,12 +154,14 @@ const exportModuleList = async function(outputDir, baseURL, basePath, moduleList
 		ws.end(
 			"]\n" +
 			"globalThis.requirifierMainModule = \"" + baseURL + stringEscapeSquences(moduleList.mainModule) + "\";\n" +
-			"globalThis.requirifierBaseURL = \"" + baseURL + "\";\n"
+			"globalThis.requirifierBaseURL = \"" + baseURL + "\";\n" +
+			"globalThis.requirifierPolyfills = " + polyfillFunctions + "\n"
 		);
 	}else{
 		ws.end(
 			"],\n" +
-			"\"" + baseURL + stringEscapeSquences(moduleList.mainModule) + "\");\n"
+			"\"" + baseURL + stringEscapeSquences(moduleList.mainModule) + "\",\n" +
+			polyfillFunctions + ");\n"
 		);
 	}
 }
@@ -155,18 +172,29 @@ const main = async function(){
 		console.log("Generated big file list:", util.inspect(bigFileList, true, 10, true));
 		// TODO: We should probably only update files that have been changed, but that would require keeping track of files we no longer use, and I'm lazy
 		await removeDirectoryContents(bigFileList.outputDir);
+		const allPolyfills = new Set();
 		for(const moduleListName in bigFileList.moduleList){
 			console.log("Exporting module list " + moduleListName + "...");
 			await exportModuleList(
 				bigFileList.outputDir,bigFileList.baseURL,
 				bigFileList.basePath,
 				moduleListName,
-				bigFileList.moduleList[moduleListName]
+				bigFileList.moduleList[moduleListName],
+				allPolyfills
 			);
 		}
-
-		await fsp.copyFile(__dirname + "/../files-to-copy/requirifier-init.js", bigFileList.outputDir + path.sep + "requirifier-init.js")
-		await fsp.copyFile(__dirname + "/../files-to-copy/global-this-shim.js", bigFileList.outputDir + path.sep + "global-this-shim.js")
+		if(allPolyfills.size > 0){
+			await fsp.mkdir(bigFileList.outputDir + path.sep + "requirifier-polyfills");
+		}
+		const copyPromises = allPolyfills.size === 0 ? [] : [...allPolyfills].map(async polyfillName => {
+			return fsp.copyFile(
+				__dirname + "/../files-to-copy/polyfills/" + polyfillName + ".js",
+				bigFileList.outputDir + path.sep + "requirifier-polyfills" + path.sep + polyfillName + ".js"
+			)
+		});
+		copyPromises.push(fsp.copyFile(__dirname + "/../files-to-copy/requirifier-init.js", bigFileList.outputDir + path.sep + "requirifier-init.js"));
+		copyPromises.push(fsp.copyFile(__dirname + "/../files-to-copy/global-this-shim.js", bigFileList.outputDir + path.sep + "global-this-shim.js"));
+		await Promise.all(copyPromises);
 		console.log("done!");
 	}catch(ex){
 		console.error(ex.stack);

@@ -18,7 +18,6 @@ const resolvePath = function(path){
 	}
 	return resolveMaps[path] || path;
 }
-
 const loadedJavascripts = {};
 const loadJavascript = function(url){
 	if(loadedJavascripts[url] == null){
@@ -27,7 +26,7 @@ const loadJavascript = function(url){
 			element.async = true;
 			element.onload = () => {
 				loadedJavascripts[url] = true;
-				resolve();
+				resolve(true);
 			};
 			element.onerror = (e) => {
 				//TODO: e is an EVENT not an error!!
@@ -41,7 +40,6 @@ const loadJavascript = function(url){
 	return loadedJavascripts[url];
 }
 globalThis.requirifierModuleDefinitions = {};
-
 const moduleMainMainFuncs = {};
 const cachedModuleResults = {};
 const requireModule = function(moduleName, parentFile){
@@ -76,8 +74,14 @@ const requireAbsolute = function(resolvedPath, parentFile){
 	}
 	return cachedModuleResults[resolvedPath];
 }
-
-const addNewModuleDefinitions = async function(moduleList){
+const addNewModuleDefinitions = async function(moduleList, polyfillTests){
+	const polyfillPromises = [];
+	for (const polyfillName in polyfillTests){
+		if(polyfillTests[polyfillName]()){
+			polyfillPromises.push(loadJavascript(globalThis.requirifierBaseURL + "requirifier-polyfills/" + polyfillName + ".js"));
+		}
+	}
+	await Promise.all(polyfillPromises);
 	await Promise.all(moduleList.map((moduleProperties) => {
 		return loadJavascript(moduleProperties.url);
 	}));
@@ -191,16 +195,13 @@ let mainRequirifierPromise = new Promise((resolve, reject) => {
 	mainRequirifierResolve = resolve;
 	mainRequirifierReject = reject;
 });
-
-
 globalThis.requirifierModulesLoaded = Promise.resolve(true);
-
 document.addEventListener("DOMContentLoaded", async function(event) { 
 	try{
 		if(!Array.isArray(globalThis.requirifierModuleList)){
 			throw new Error("Main module list not defined!");
 		}
-		await addNewModuleDefinitions(globalThis.requirifierModuleList);
+		await addNewModuleDefinitions(globalThis.requirifierModuleList, globalThis.requirifierPolyfills || {});
 		requireAbsolute(resolveMaps[globalThis.requirifierMainModule], null);
 		mainRequirifierResolve();
 	}catch(ex){
@@ -209,14 +210,14 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 		alert("Unable to load JavaScript modules. Some (or all) site features may not be available");
 	}
 });
-globalThis.addRequirifierModules = async function(defs, startModule){
+globalThis.addRequirifierModules = async function(defs, startModule, polyfills = {}){
 	let requirifierLoadedResolve;
 	globalThis.requirifierModulesLoaded = new Promise((resolve) => {
 		requirifierLoadedResolve = resolve;
 	});
 	await mainRequirifierPromise;
 	try{
-		await addNewModuleDefinitions(defs);
+		await addNewModuleDefinitions(defs, polyfills);
 		if(startModule){
 			requireAbsolute(resolveMaps[startModule], null);
 		}
