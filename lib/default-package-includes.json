@@ -16,5 +16,8 @@
 	},
 	"leaflet": {
 		"include": []
+	},
+	"dompurify": {
+		"include": []
 	}
 }
