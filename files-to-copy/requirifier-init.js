@@ -43,9 +43,10 @@ globalThis.requirifierModuleDefinitions = {};
 const moduleMainMainFuncs = {};
 const cachedModuleResults = {};
 const requireModule = function(moduleName, parentFile){
+	const lastNodeModulesPath = globalThis.requirifierBaseURL.length - 1;
 	let searchIndex = parentFile.lastIndexOf("/node_modules/");
 	let moduleFile = globalThis.requirifierBaseURL + "node_modules/" + moduleName;
-	if(searchIndex === -1){
+	if(searchIndex <= lastNodeModulesPath){
 		if(resolveMaps[moduleFile] === undefined){
 			throw new Error("Module " + moduleName + " not found!");
 		}
@@ -54,7 +55,7 @@ const requireModule = function(moduleName, parentFile){
 	moduleFile = parentFile.substring(0, searchIndex + 14) + moduleName;
 	while(moduleMainMainFuncs[resolveMaps[moduleFile]] == null){
 		searchIndex = moduleFile.lastIndexOf("/node_modules/", searchIndex);
-		if(searchIndex === -1){
+		if(searchIndex <= lastNodeModulesPath){
 			throw new Error("Module " + moduleName + " not found!");
 		}
 		moduleFile = moduleFile.substring(0, searchIndex + 14) + moduleName;
