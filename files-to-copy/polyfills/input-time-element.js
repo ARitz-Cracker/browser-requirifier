@@ -1,5 +1,5 @@
 (() => {
-	// TODO: Step is not supported (which means seconds cannot be choosed)
+	// TODO: Step is not supported (which means seconds cannot be chosen)
 	// TODO: Fire input events when value is chosen
 	const isTwelveHour = (new Date(2020, 10, 24, 13, 0)).toLocaleTimeString().indexOf("13") === -1;
 	const validTimeString = /^([0-9]{2}):([0-9]{2})$/;
