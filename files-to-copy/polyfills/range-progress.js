@@ -49,8 +49,8 @@
 				return originalInputDescriptor.get.call(elem);
 			}
 		});
-
 		elem[rangeProgressWorkaroundApplied] = true;
+		doTheWorkaround(elem);
 	}
 	document.addEventListener("input", ev => {
 		doTheWorkaround(ev.target);
